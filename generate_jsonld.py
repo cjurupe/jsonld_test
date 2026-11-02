@@ -100,6 +100,8 @@ THIRD_PARTY_ARTIFACTS = [
     ("com.github.mautini", "schemaorg-java", "1.0.1"),
     ("com.google.code.findbugs", "jsr305", "3.0.1"),
     ("com.google.code.gson", "gson", "2.5"),
+    # JsonLDUtils formats phone numbers as E.164 (json-ld-seo commit 8ee2abe).
+    ("com.googlecode.libphonenumber", "libphonenumber", "8.13.52"),
 ]
 
 # DEFAULT_EMID = "mm7v0lf"
@@ -113,7 +115,10 @@ THIRD_PARTY_ARTIFACTS = [
 # DEFAULT_EMID = "mk7ykx5"
 # DEFAULT_EMID = "m14c2yn"
 # DEFAULT_EMID = "m15ry2w"
-DEFAULT_EMID = "mmjjpxt"
+# DEFAULT_EMID = "mx5qs33" #GB
+DEFAULT_EMID = "mx5096w" #AUS
+
+
 
 # Internal e2e hosts (the same services gateway-api consumes).
 E2E_LIVEDATA = "http://livedata-service.manta-site.e2e.smoketest.aws.ecnext.net:5721/v1/company"
