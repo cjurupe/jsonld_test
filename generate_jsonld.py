@@ -14,6 +14,7 @@ Steps it runs:
        - recommendations: recommendation-service /v1/recommendations/{emid}   (shallow merge)
        - products:        products-service /v3/products?claim_id={claimId}  -> products.productTerms
        - services:        products-service /v3/services?claim_id={claimId}  -> services.serviceTerms
+       - images:          company-service /v1/company/images/{emid}?approvedOnly=true -> companyImages
          (claimed / PBL companies only, as gateway-api's getSecondaryCalls() does)
      Those are the only upstreams that feed the JSON-LD (the remaining secondary calls
      contribute no field the library reads).
@@ -56,7 +57,7 @@ from pathlib import Path
 # Configuration
 # --------------------------------------------------------------------------- #
 
-JSONLD_VERSION = "1.1.0"  # see gateway-api/build.sbt: "com.manta.jsonld" % "json-ld-seo"
+JSONLD_VERSION = "1.1.1"  # see gateway-api/build.sbt: "com.manta.jsonld" % "json-ld-seo"
 
 # Nexus bases tried in order (Nexus 3 and Nexus 2 layouts).
 NEXUS_BASES = [
@@ -116,7 +117,12 @@ THIRD_PARTY_ARTIFACTS = [
 # DEFAULT_EMID = "m14c2yn"
 # DEFAULT_EMID = "m15ry2w"
 # DEFAULT_EMID = "mx5qs33" #GB
-DEFAULT_EMID = "mx5096w" #AUS
+# DEFAULT_EMID = "mx5096w" #AUS
+# DEFAULT_EMID = "mt19sr6" #US
+# DEFAULT_EMID = "mx4hypb" #CANADA
+# DEFAULT_EMID = "m14c2yn" #CON FOTOS Y LOGOS
+# DEFAULT_EMID = "m1q2hm2" #SIN IMAGENES
+DEFAULT_EMID = "mtrp2ff" #CON LOGO Y SIN IMAGENES
 
 
 
@@ -413,6 +419,9 @@ def build_company_node(
             for key, value in recs.items():
                 data[key] = value
 
+    if company_base:
+        add_company_images(data, emid, company_base, insecure)
+
     if products_base:
         add_catalog_items(data, products_base, insecure)
 
@@ -479,6 +488,22 @@ def faqs_resolve_payload(data: dict) -> dict:
     if data.get("claimSource") == "DAC_GROUP" and "state farm" in str(name or "").lower():
         body["getQuoteUrl"] = get("contactInfo.website") or "https://www.statefarm.com/"
     return body
+
+
+def add_company_images(data: dict, emid: str, company_base: str, insecure: bool = False) -> None:
+    """Merges data.companyImages (the approved gallery photos), as gateway-api's
+    getSecondaryCalls() does via company-service images/{emid}?approvedOnly=true."""
+    url = f"{company_base.rstrip('/')}/images/{emid}?approvedOnly=true"
+    try:
+        images = fetch_json(url, insecure=insecure).get("companyImages")
+    except Failure as exc:
+        log(f"  warning: no company images ({exc}); the JSON-LD will have no gallery photos")
+        images = None
+    data["companyImages"] = images if isinstance(images, list) else []
+    if not data["companyImages"]:
+        log("  no approved gallery photos for this company")
+    if not data.get("logo"):
+        log("  livedata returned no logo for this company")
 
 
 def add_faqs(data: dict, emid: str, company_base: str, insecure: bool = False) -> None:
